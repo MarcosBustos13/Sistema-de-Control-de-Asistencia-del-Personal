@@ -1,10 +1,10 @@
-# reporte_individual.py
+import tkinter as tk
+from tkinter import ttk, messagebox, filedialog
 import sys
 import os
-import tkinter as tk
-from tkinter import ttk, messagebox
-import datetime
 import logging
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Agregar el directorio raíz del proyecto a sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,106 +19,105 @@ except ImportError as e:
     sys.exit(1)
 
 class Ventana(tk.Toplevel):
-    """
-    Ventana para generar el reporte individual de asistencias de un usuario.
-    """
     def __init__(self, parent):
         super().__init__(parent)
         self.estilos = Estilos()
         self.conexion = Conexion("ASISTENCIAS_JFS")
-        
+        self.resultados = None  # Para almacenar los resultados
+        self.nombre_usuario = None  # Para almacenar el nombre del usuario
+
         self.configurar_ventana()
         self.crear_interfaz()
         self.protocol("WM_DELETE_WINDOW", self.cerrar)
 
     def configurar_ventana(self):
-        """Configura la ventana principal."""
         self.title("Reporte Individual")
         self.configure(background=self.estilos.colores.get('fondo', '#000080'))
-        self.geometry("400x250")
+        self.geometry("500x550")  # Aumentamos el tamaño para mostrar más información
         self.resizable(False, False)
         self.centrar_ventana()
 
     def centrar_ventana(self):
-        """Centra la ventana en la pantalla."""
         self.update_idletasks()
-        ancho = 400
-        alto = 250
+        ancho, alto = 500, 550
         x = (self.winfo_screenwidth() // 2) - (ancho // 2)
         y = (self.winfo_screenheight() // 2) - (alto // 2)
         self.geometry(f"{ancho}x{alto}+{x}+{y}")
 
     def crear_interfaz(self):
-        """Crea la interfaz gráfica."""
-        # Configurar estilos predeterminados
-        estilo = ttk.Style()
-        estilo.configure(
-            'FormLabel.TLabel',
-            background=self.estilos.colores.get('fondo', '#000080'),
-            foreground=self.estilos.colores.get('texto', '#FFFFFF'),
-            font=('Helvetica', 12)
-        )
-        estilo.configure(
-            'FormEntry.TEntry',
-            font=('Helvetica', 12)
-        )
-
-        # Contenedor principal
-        main_frame = ttk.Frame(self, style='MainFrame.TFrame')
+        main_frame = ttk.Frame(self)
         main_frame.pack(padx=20, pady=20, fill='both', expand=True)
 
-        # Etiqueta y campo de entrada para la cédula
-        ttk.Label(
-            main_frame,
-            text="Cédula del usuario:",
-            style='FormLabel.TLabel'
-        ).grid(row=0, column=0, padx=10, pady=(30, 10), sticky='e')
+        etiqueta_estilo = {"background": self.estilos.colores.get('fondo', '#000080'), "foreground": "white"}
 
-        self.entry_cedula = ttk.Entry(main_frame, style='FormEntry.TEntry')
-        self.entry_cedula.grid(row=0, column=1, padx=10, pady=(30, 10), sticky='w')
+        ttk.Label(main_frame, text="Cédula del usuario:", background=etiqueta_estilo["background"], foreground=etiqueta_estilo["foreground"]).grid(row=0, column=0, padx=10, pady=10, sticky='e')
+        self.entry_cedula = ttk.Entry(main_frame)
+        self.entry_cedula.grid(row=0, column=1, padx=10, pady=10, sticky='w')
         self.entry_cedula.focus_set()
 
-        # Espacio para separar los botones
+        ttk.Label(main_frame, text="Año:", background=etiqueta_estilo["background"], foreground=etiqueta_estilo["foreground"]).grid(row=1, column=0, padx=10, pady=10, sticky='e')
+        self.entry_anio = ttk.Entry(main_frame)
+        self.entry_anio.grid(row=1, column=1, padx=10, pady=10, sticky='w')
+
+        ttk.Label(main_frame, text="Mes:", background=etiqueta_estilo["background"], foreground=etiqueta_estilo["foreground"]).grid(row=2, column=0, padx=10, pady=10, sticky='e')
+        self.combo_mes = ttk.Combobox(main_frame, values=[
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ])
+        self.combo_mes.grid(row=2, column=1, padx=10, pady=10, sticky='w')
+
+        ttk.Label(main_frame, text="Días hábiles:", background=etiqueta_estilo["background"], foreground=etiqueta_estilo["foreground"]).grid(row=3, column=0, padx=10, pady=10, sticky='e')
+        self.combo_dias_habiles = ttk.Combobox(main_frame, values=[str(i) for i in range(10, 31)])
+        self.combo_dias_habiles.grid(row=3, column=1, padx=10, pady=10, sticky='w')
+
         boton_frame = ttk.Frame(main_frame)
-        boton_frame.grid(row=1, column=0, columnspan=2, pady=(10, 30))
+        boton_frame.grid(row=4, column=0, columnspan=2, pady=20)
 
-        # Botón Generar
-        ttk.Button(
-            boton_frame,
-            text="Generar",
-            style='Success.TButton',
-            width=8,
-            command=self.generar_reporte
-        ).pack(side='left', padx=10)
+        ttk.Button(boton_frame, text="Calcular", command=self.calcular_asistencia).pack(side='left', padx=10)
+        ttk.Button(boton_frame, text="Cancelar", command=self.cerrar).pack(side='left', padx=10)
 
-        # Botón Cancelar
-        ttk.Button(
-            boton_frame,
-            text="Cancelar",
-            style='Danger.TButton',
-            width=8,
-            command=self.cerrar
-        ).pack(side='left', padx=10)
+        # Frame para mostrar los resultados
+        self.resultado_frame = ttk.Frame(main_frame)
+        self.resultado_frame.grid(row=5, column=0, columnspan=2, pady=20)
 
-        # Etiqueta para mostrar el resultado
-        self.label_resultado = ttk.Label(main_frame, text="", style='Info.TLabel')
-        self.label_resultado.grid(row=2, column=0, columnspan=2, pady=(0, 20))
+        # Cuadro de texto para mostrar los resultados
+        self.text_resultado = tk.Text(self.resultado_frame, height=10, width=50, wrap=tk.WORD)
+        self.text_resultado.pack()
+        self.text_resultado.config(state=tk.DISABLED)  # Hacerlo de solo lectura
 
-    def validar_cedula(self, cedula: str) -> bool:
-        """Valida que la cédula contenga solo números y tenga longitud válida."""
+        # Frame para los botones de generar PDF y cerrar
+        botones_frame = ttk.Frame(self.resultado_frame)
+        botones_frame.pack(pady=10)
+
+        ttk.Button(botones_frame, text="Generar PDF", command=self.generar_pdf).pack(side='left', padx=10)
+        ttk.Button(botones_frame, text="Cerrar", command=self.cerrar).pack(side='left', padx=10)
+
+    def calcular_asistencia(self):
+        cedula = self.entry_cedula.get().strip()
+        anio = self.entry_anio.get().strip()
+        mes = self.combo_mes.get().strip()
+        dias_habiles = self.combo_dias_habiles.get().strip()
+
+        meses = {
+            "Enero": "01", "Febrero": "02", "Marzo": "03", "Abril": "04",
+            "Mayo": "05", "Junio": "06", "Julio": "07", "Agosto": "08",
+            "Septiembre": "09", "Octubre": "10", "Noviembre": "11", "Diciembre": "12"
+        }
+
         if not cedula.isdigit():
             messagebox.showwarning("Advertencia", "La cédula debe contener solo números.")
-            return False
-        if len(cedula) < 6 or len(cedula) > 10:
-            messagebox.showwarning("Advertencia", "La cédula debe tener entre 6 y 10 dígitos.")
-            return False
-        return True
+            return
 
-    def generar_reporte(self):
-        """Genera el reporte de asistencias del usuario."""
-        cedula = self.entry_cedula.get().strip()
+        if not anio.isdigit() or len(anio) != 4:
+            messagebox.showwarning("Advertencia", "El año debe ser un número de 4 dígitos.")
+            return
 
-        if not self.validar_cedula(cedula):
+        if mes not in meses:
+            messagebox.showwarning("Advertencia", "Debe seleccionar un mes válido.")
+            return
+
+        if not dias_habiles.isdigit():
+            messagebox.showwarning("Advertencia", "Debe seleccionar la cantidad de días hábiles.")
             return
 
         try:
@@ -127,53 +126,96 @@ class Ventana(tk.Toplevel):
 
             cursor = self.conexion.connection.cursor()
 
-            # Consulta SQL para contar asistencias en el mes actual
+            # Obtener los nombres y apellidos del usuario desde la tabla USUARIOS
             cursor.execute(
-                "SELECT COUNT(*) FROM asistencias "
-                "WHERE cedula_usuario = ? AND MONTH(fecha) = ?",
-                (cedula, datetime.datetime.now().month)
+                "SELECT primer_apellido, segundo_apellido, primer_nombre, segundo_nombre FROM USUARIOS WHERE cedula_id = ?",
+                (cedula,)
+            )
+            usuario = cursor.fetchone()
+            if not usuario:
+                raise Exception("No se encontró el usuario con la cédula proporcionada.")
+
+            # Concatenar nombres y apellidos para formar el nombre completo
+            primer_apellido, segundo_apellido, primer_nombre, segundo_nombre = usuario
+            nombre_completo = f"{primer_nombre} {segundo_nombre} {primer_apellido} {segundo_apellido}".strip()
+            self.nombre_usuario = nombre_completo
+
+            # Consulta para contar las asistencias
+            cursor.execute(
+                "SELECT COUNT(DISTINCT fecha) FROM ASISTENCIA WHERE cedula_id = ? AND YEAR(fecha) = ? AND MONTH(fecha) = ?",
+                (cedula, int(anio), int(meses[mes]))
             )
             asistencias = cursor.fetchone()[0]
-
-            # Calcular días laborables dinámicamente
-            dias_laborables = self.calcular_dias_laborables(datetime.datetime.now().year, datetime.datetime.now().month)
-            inasistencias = dias_laborables - asistencias
-
-            # Mostrar resultados
-            resultado = f"Reporte Mensual:\n- Días Asistidos: {asistencias}\n- Inasistencias: {inasistencias}"
-            self.label_resultado.config(text=resultado)
-
+            inasistencias = int(dias_habiles) - asistencias
             self.conexion.desconectar()
-        except Exception as e:
-            logging.error(f"Error al generar el reporte: {str(e)}")
-            messagebox.showerror("Error", f"Error al generar el reporte: {str(e)}")
 
-    def calcular_dias_laborables(self, year: int, month: int) -> int:
-        """Calcula dinámicamente los días laborables en un mes dado."""
-        import calendar
-        cal = calendar.Calendar()
-        dias_laborables = 0
-        for day in cal.itermonthdays(year, month):
-            if day != 0 and calendar.weekday(year, month, day) < 5:  # Lunes a Viernes
-                dias_laborables += 1
-        return dias_laborables
+            self.resultados = (cedula, self.nombre_usuario, mes, anio, asistencias, inasistencias)  # Guardar resultados
+            resultado_texto = (
+                f"Cédula: {cedula}\n"
+                f"Nombre: {self.nombre_usuario}\n"
+                f"Mes: {mes} {anio}\n"
+                f"Asistencias: {asistencias}\n"
+                f"Inasistencias: {inasistencias}"
+            )
+
+            # Mostrar los resultados en el cuadro de texto
+            self.text_resultado.config(state=tk.NORMAL)
+            self.text_resultado.delete(1.0, tk.END)
+            self.text_resultado.insert(tk.END, resultado_texto)
+            self.text_resultado.config(state=tk.DISABLED)
+
+        except Exception as e:
+            logging.error(f"Error al calcular la asistencia: {str(e)}")
+            messagebox.showerror("Error", f"Error al calcular la asistencia: {str(e)}")
+
+    def generar_pdf(self):
+        if not self.resultados:
+            messagebox.showwarning("Advertencia", "No hay resultados para generar el PDF.")
+            return
+
+        try:
+            # Pedir al usuario dónde guardar el PDF
+            ruta_archivo = filedialog.asksaveasfilename(
+                defaultextension=".pdf",
+                filetypes=[("Archivos PDF", "*.pdf")],
+                title="Guardar PDF como"
+            )
+            if not ruta_archivo:
+                return  # El usuario canceló la operación
+
+            # Crear el PDF
+            c = canvas.Canvas(ruta_archivo, pagesize=letter)
+            c.setFont("Helvetica", 12)
+
+            # Escribir los resultados en el PDF
+            c.drawString(100, 750, "Reporte de Asistencia Individual")
+            c.drawString(100, 730, f"Cédula: {self.resultados[0]}")
+            c.drawString(100, 710, f"Nombre: {self.resultados[1]}")
+            c.drawString(100, 690, f"Mes: {self.resultados[2]} {self.resultados[3]}")
+            c.drawString(100, 670, f"Asistencias: {self.resultados[4]}")
+            c.drawString(100, 650, f"Inasistencias: {self.resultados[5]}")
+
+            c.save()
+            messagebox.showinfo("Éxito", f"El PDF se ha guardado en: {ruta_archivo}")
+
+        except Exception as e:
+            logging.error(f"Error al generar el PDF: {str(e)}")
+            messagebox.showerror("Error", f"Error al generar el PDF: {str(e)}")
 
     def cerrar(self):
-        """Cierra la ventana y desconecta la base de datos."""
         try:
-            if self.conexion:
+            # Desconectar la base de datos si está conectada
+            if self.conexion and self.conexion.connection:
                 self.conexion.desconectar()
         except Exception as e:
             logging.error(f"Error al cerrar la conexión: {str(e)}")
-        finally:
-            self.destroy()
+        
+        # Cerrar la ventana
+        self.destroy()
 
+# Ejecutar la ventana
 if __name__ == "__main__":
-    try:
-        root = tk.Tk()
-        root.withdraw()  # Oculta la ventana raíz
-        app = Ventana(root)
-        app.mainloop()  # Ejecuta el bucle principal de la interfaz gráfica
-    except Exception as e:
-        logging.error(f"Error inesperado: {str(e)}")
-        messagebox.showerror("Error", "Ocurrió un error inesperado en la aplicación")
+    root = tk.Tk()
+    root.withdraw()  # Ocultar la ventana principal
+    ventana = Ventana(root)
+    ventana.mainloop()

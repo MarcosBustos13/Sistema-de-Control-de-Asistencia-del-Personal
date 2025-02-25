@@ -1,5 +1,3 @@
-
-        # crear_respaldo.py
 import sys
 import os
 import tkinter as tk
@@ -22,89 +20,113 @@ class Ventana(tk.Toplevel):
         super().__init__(parent)
         self.parent = parent
         self.title("Crear Respaldo")
-        self.geometry("400x300")  # Tamaño ajustado
+        self.geometry("450x300")  # Tamaño ajustado
         self.configure(background="#001F3F")  # Fondo navy
         self.resizable(False, False)
 
-        # Configurar estilos
-        self.style = ttk.Style()
-        self.style.theme_use("clam")
-        self.style.configure(
-            "TLabel",
-            background="#001F3F",  # Fondo navy
-            foreground="#FFFFFF",  # Texto blanco
-            font=("Arial", 12),
-        )
-        self.style.configure(
-            "TButton",
-            background="#FFFFFF",  # Fondo blanco
-            foreground="#000000",  # Texto negro
-            font=("Arial", 12, "bold"),
-            padding=5,
-        )
-        self.style.map(
-            "TButton",
-            background=[("active", "#E0E0E0")],  # Color al hacer clic
-        )
-        self.style.configure(
-            "TEntry",
-            fieldbackground="white",
-            foreground="black",
-            font=("Arial", 12),
-        )
+        try:
+            # Configurar estilos
+            self.style = ttk.Style()
+            self.style.theme_use("clam")
+            self.style.configure(
+                "TLabel",
+                background="#001F3F",  # Fondo navy
+                foreground="#FFFFFF",  # Texto blanco
+                font=("Arial", 12, "bold"),
+            )
+            self.style.configure(
+                "TButton",
+                background="#FFFFFF",  # Fondo blanco
+                foreground="#000000",  # Texto negro
+                font=("Arial", 12, "bold"),
+                padding=5,
+            )
+            self.style.map(
+                "TButton",
+                background=[("active", "#E0E0E0")],  # Color al hacer clic
+            )
+            self.style.configure(
+                "TEntry",
+                fieldbackground="white",
+                foreground="black",
+                font=("Arial", 12, "bold"),
+            )
 
-        # Centrar la ventana
-        self.centrar_ventana()
+            # Centrar la ventana
+            self.centrar_ventana()
 
-        # Contenedor principal
-        main_frame = ttk.Frame(self, style="TFrame")
-        main_frame.pack(padx=20, pady=20, fill="both", expand=True)
+            # Contenedor principal
+            main_frame = ttk.Frame(self, style="TFrame")
+            main_frame.grid(padx=20, pady=20, sticky="nsew")
 
-        # Etiqueta de información
-        lbl_info = ttk.Label(main_frame, text="Directorio a respaldar:", style="TLabel")
-        lbl_info.grid(row=0, column=0, padx=10, pady=(20, 10), sticky="w")
+            # Etiqueta de información
+            lbl_info = ttk.Label(main_frame, text="Directorio a respaldar:", style="TLabel")
+            lbl_info.grid(row=0, column=0, padx=10, pady=(20, 10), sticky="w")
 
-        # Campo de entrada para el directorio
-        self.entry_directorio = ttk.Entry(main_frame, width=40, style="TEntry")
-        self.entry_directorio.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+            # Campo de entrada para el directorio
+            self.entry_directorio = ttk.Entry(main_frame, width=40, style="TEntry")
+            self.entry_directorio.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
 
-        # Botón para seleccionar directorio
-        btn_browse = ttk.Button(
-            main_frame,
-            text="Seleccionar Directorio",
-            style="TButton",
-            command=self.seleccionar_directorio
-        )
-        btn_browse.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+            # Botón para seleccionar directorio
+            btn_browse = ttk.Button(
+                main_frame,
+                text="Seleccionar",
+                style="TButton",
+                command=self.seleccionar_directorio
+            )
+            btn_browse.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 
-        # Etiqueta para ubicación de destino
-        lbl_destino = ttk.Label(main_frame, text="Ubicación de destino:", style="TLabel")
-        lbl_destino.grid(row=2, column=0, padx=10, pady=(10, 5), sticky="w")
+            # Etiqueta para ubicación de destino
+            lbl_destino = ttk.Label(main_frame, text="Ubicación de destino:", style="TLabel")
+            lbl_destino.grid(row=2, column=0, padx=10, pady=(10, 5), sticky="w")
 
-        # Campo de entrada para la ubicación de destino
-        self.entry_destino = ttk.Entry(main_frame, width=40, style="TEntry")
-        self.entry_destino.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
+            # Campo de entrada para la ubicación de destino
+            self.entry_destino = ttk.Entry(main_frame, width=40, style="TEntry")
+            self.entry_destino.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
 
-        # Botón para seleccionar ubicación de destino
-        btn_destino = ttk.Button(
-            main_frame,
-            text="Seleccionar Destino",
-            style="TButton",
-            command=self.seleccionar_destino
-        )
-        btn_destino.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+            # Botón para seleccionar ubicación de destino
+            btn_destino = ttk.Button(
+                main_frame,
+                text="Seleccionar",
+                style="TButton",
+                command=self.seleccionar_destino
+            )
+            btn_destino.grid(row=3, column=1, padx=10, pady=5, sticky="w")
 
-        # Botón para generar respaldo
-        btn_respaldar = ttk.Button(
-            main_frame,
-            text="Generar Respaldo",
-            style="TButton",
-            command=self.crear_respaldo
-        )
-        btn_respaldar.grid(row=4, column=0, columnspan=2, pady=20)
+            # Frame para los botones de acción
+            action_frame = ttk.Frame(main_frame, style="TFrame")
+            action_frame.grid(row=4, column=0, columnspan=2, pady=20)
 
-        # Protocolo para cerrar la ventana
-        self.protocol("WM_DELETE_WINDOW", self.cerrar)
+            # Botón para generar respaldo
+            btn_respaldar = ttk.Button(
+                action_frame,
+                text="Generar",
+                style="TButton",
+                command=self.crear_respaldo,
+                width=10  # Tamaño fijo
+            )
+            btn_respaldar.pack(side="left", padx=5, pady=5)
+
+            # Botón para cancelar
+            btn_cancelar = ttk.Button(
+                action_frame,
+                text="Cancelar",
+                style="TButton",
+                command=self.cerrar,
+                width=10  # Tamaño fijo
+            )
+            btn_cancelar.pack(side="left", padx=5, pady=5)
+
+            # Centrar los botones dentro del frame
+            action_frame.grid_columnconfigure(0, weight=1)
+            action_frame.grid_columnconfigure(1, weight=1)
+
+            # Protocolo para cerrar la ventana
+            self.protocol("WM_DELETE_WINDOW", self.cerrar)
+
+        except Exception as e:
+            logging.error(f"Error al inicializar la ventana: {str(e)}")
+            messagebox.showerror("Error", f"Error al inicializar la ventana:\n{str(e)}")
 
     def centrar_ventana(self):
         """
@@ -181,4 +203,4 @@ if __name__ == "__main__":
         app.mainloop()
     except Exception as e:
         logging.error(f"Error inesperado: {str(e)}")
-        messagebox.showerror("Error", "Ocurrió un error inesperado en la aplicación")
+        messagebox.showerror("Error", f"Error inesperado:\n{str(e)}")

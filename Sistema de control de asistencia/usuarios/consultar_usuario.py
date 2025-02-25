@@ -1,4 +1,3 @@
-# consultar_usuario.py
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -12,7 +11,7 @@ class Ventana(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent = parent
-        self.title("Consulta de Usuarios")
+        self.title("Consultar Usuario")
         self.geometry("1100x600")  # Ancho fijo para ver todas las columnas
         self.configure(background="navy")
         self.estilos = Estilos()
@@ -83,11 +82,11 @@ class Ventana(tk.Toplevel):
         self.tabla.column('Domicilio', width=300)
         self.tabla.grid(row=1, column=0, columnspan=3, pady=20, sticky='nsew')
 
-        # Botón Cerrar
+        # Botones Editar y Cerrar
         btn_frame = ttk.Frame(main_frame, style='TFrame')
         btn_frame.grid(row=2, column=0, columnspan=3, pady=10, sticky='n')
-        btn_cerrar = ttk.Button(btn_frame, text="Cerrar", command=self._cerrar, style='TButton')
-        btn_cerrar.grid(row=0, column=0, padx=10, pady=5)
+        #ttk.Button(btn_frame, text="Editar", command=self.abrir_ventana_editar, style='TButton').grid(row=0, column=0, padx=10, pady=5)
+        ttk.Button(btn_frame, text="Cerrar", command=self._cerrar, style='TButton').grid(row=0, column=1, padx=10, pady=5)
 
         # Configuración responsive
         main_frame.columnconfigure(0, weight=1)
@@ -153,6 +152,82 @@ class Ventana(tk.Toplevel):
         self.entry_cedula.delete(0, tk.END)
         self.tabla.delete(*self.tabla.get_children())
         self.entry_cedula.focus()
+
+    def abrir_ventana_editar(self):
+        """Abre una ventana para editar los datos del usuario seleccionado."""
+        selected_item = self.tabla.selection()
+        if not selected_item:
+            messagebox.showwarning("Advertencia", "Seleccione un usuario para editar.")
+            return
+
+        item = self.tabla.item(selected_item)
+        user_id = item['text']
+        valores = item['values']
+
+        # Crear la ventana de edición
+        editar_ventana = tk.Toplevel(self)
+        editar_ventana.title("Editar Usuario")
+        editar_ventana.geometry("400x400")
+        editar_ventana.configure(background="navy")
+        
+        ttk.Label(editar_ventana, text="Editar datos del usuario", font=('Arial', 14, 'bold')).pack(pady=10)
+
+        # Campos de edición
+        labels = ["Nacionalidad:", "Nombres y Apellidos:", "Correo Electrónico:", "Teléfono:", "Tipo Trabajador:", "Fecha Nac:", "Domicilio:"]
+        self.edit_entries = []
+
+        for idx, label_text in enumerate(labels):
+            frame = ttk.Frame(editar_ventana, style='TFrame')
+            frame.pack(pady=5)
+            ttk.Label(frame, text=label_text, style='TLabel').pack(side='left')
+            entry = ttk.Entry(frame, width=30)
+            entry.insert(0, valores[idx])
+            entry.pack(side='left')
+            self.edit_entries.append(entry)
+
+        # Botón para guardar cambios
+        ttk.Button(editar_ventana, text="Guardar Cambios", command=lambda: self.guardar_cambios(user_id, editar_ventana), style='TButton').pack(pady=20)
+
+    def guardar_cambios(self, user_id, ventana):
+        """Guarda los cambios del usuario en la base de datos."""
+        nuevos_valores = [entry.get() for entry in self.edit_entries]
+
+        # Separar los nombres y apellidos para que coincidan con los campos de la base de datos
+        nombres_completos = nuevos_valores[1].split()
+        primer_nombre = nombres_completos[0]
+        segundo_nombre = nombres_completos[1] if len(nombres_completos) > 2 else ''
+        primer_apellido = nombres_completos[-2] if len(nombres_completos) > 2 else nombres_completos[1]
+        segundo_apellido = nombres_completos[-1] if len(nombres_completos) > 2 else ''
+
+        try:
+            if not self.db.conectar():
+                raise Exception("Error de conexión a la base de datos.")
+
+            cursor = self.db.connection.cursor()
+            cursor.execute("""
+                UPDATE usuarios SET
+                    nacionalidad = ?,
+                    primer_nombre = ?,
+                    segundo_nombre = ?,
+                    primer_apellido = ?,
+                    segundo_apellido = ?,
+                    e_mail = ?,
+                    nro_telf = ?,
+                    tipo_trabajador = ?,
+                    fecha_nac = ?,
+                    domicilio = ?
+                WHERE id = ?
+            """, (nuevos_valores[0], primer_nombre, segundo_nombre, primer_apellido, segundo_apellido, nuevos_valores[2], nuevos_valores[3], nuevos_valores[4], nuevos_valores[5], nuevos_valores[6], user_id))
+
+            self.db.connection.commit()
+            messagebox.showinfo("Éxito", "Datos del usuario actualizados correctamente.")
+            self.db.desconectar()
+            ventana.destroy()
+            self.buscar_usuario()  # Actualizar la tabla con los nuevos datos
+        except pyodbc.Error as e:
+            messagebox.showerror("Error BD", f"Error en base de datos:\n{str(e)}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     def _cerrar(self):
         """Cierra la ventana."""

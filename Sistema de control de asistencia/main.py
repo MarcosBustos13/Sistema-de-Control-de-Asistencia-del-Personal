@@ -1,16 +1,14 @@
 import tkinter as tk
 from PIL import Image, ImageTk
-import sys
-import os  #  importar 'os' para manejar rutas de archivos
+import os
 
-# Importación absoluta de la función mostrar_ventana_login
 from login import mostrar_ventana_login
 
 class VentanaInicio(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Sistema de Control de Asistencia")
-        self.geometry("800x600")
+        self.geometry("1550x850")
         self.resizable(False, False)
         self.configure(background="#000080")
         self.centrar_ventana()
@@ -37,7 +35,7 @@ class VentanaInicio(tk.Tk):
                 # Mostrar el logo del colegio
                 logo_label = tk.Label(self, image=logo, bg="#000080")
                 logo_label.image = logo  # Mantener referencia para evitar que el garbage collector lo elimine
-                logo_label.pack(pady=20)
+                logo_label.pack(pady=60)
             except Exception as e:
                 print(f"Error al cargar el logo: {str(e)}")
                 tk.Label(
@@ -46,7 +44,7 @@ class VentanaInicio(tk.Tk):
                     font=("Helvetica", 14, 'bold'),
                     fg="white",
                     bg="#000080"
-                ).pack(pady=20)
+                ).pack(pady=40)
         else:
             print("El archivo del logo no fue encontrado.")
             tk.Label(
@@ -55,7 +53,7 @@ class VentanaInicio(tk.Tk):
                 font=("Helvetica", 14, 'bold'),
                 fg="white",
                 bg="#000080"
-            ).pack(pady=20)
+            ).pack(pady=40)
 
         # Mostrar el mensaje de bienvenida
         tk.Label(
@@ -66,14 +64,14 @@ class VentanaInicio(tk.Tk):
             fg="white",
             bg="#000080",
             justify="center"
-        ).pack(pady=20)
+        ).pack(pady=50)
 
         # Crear un marco para los botones
         button_frame = tk.Frame(self, bg="#000080")
-        button_frame.pack(pady=40)
+        button_frame.pack(side=tk.RIGHT, anchor=tk.N, padx=20)  # Reubicar el marco a la derecha y alinear al norte (arriba)
 
         # Botón "SIGUIENTE"
-        tk.Button(
+        btn_siguiente = tk.Button(
             button_frame,
             text="SIGUIENTE",
             bg="#FFFF00",
@@ -82,10 +80,11 @@ class VentanaInicio(tk.Tk):
             width=15,
             height=2,
             command=self.abrir_login
-        ).pack(side=tk.LEFT, padx=20)
+        )
+        btn_siguiente.pack(pady=20)  # Botón "SIGUIENTE"
 
         # Botón "SALIR"
-        tk.Button(
+        btn_salir = tk.Button(
             button_frame,
             text="SALIR",
             bg="#FFFF00",
@@ -94,12 +93,12 @@ class VentanaInicio(tk.Tk):
             width=15,
             height=2,
             command=self.salir
-        ).pack(side=tk.LEFT, padx=20)
+        )
+        btn_salir.pack(pady=20)  # Botón "SALIR"
 
     def abrir_login(self):
         """Abre la ventana de inicio de sesión."""
         print("Abriendo ventana de login...")
-        self.withdraw()  # Oculta la ventana principal
         mostrar_ventana_login(self)  # Abre la ventana de login
 
     def salir(self):

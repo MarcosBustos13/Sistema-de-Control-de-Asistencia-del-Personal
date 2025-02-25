@@ -16,7 +16,7 @@ id INT IDENTITY(1,1) PRIMARY KEY,
 ;
 CREATE TABLE ASIGNATURA (
 	id INT IDENTITY(1,1) PRIMARY KEY,
-    nombre_asig VARCHAR(100) NOT NULL,
+    nombre_asig VARCHAR(20) NOT NULL,
     horas_clase_semanal INT NOT NULL
 )
 ;
@@ -44,16 +44,22 @@ CREATE TABLE PERIODO_ACADEMICO (
     fecha_fin DATE NOT NULL
 )
 ;
+
 CREATE TABLE ASISTENCIA (
 	id INT IDENTITY(1,1) PRIMARY KEY,
+    cedula_id INT NOT NULL,
     dia VARCHAR(10) NOT NULL,
     fecha DATE NOT NULL,
-    hora_entrada TIME NOT NULL,
-    hora_salida TIME NOT NULL,
-    tipo_usuario VARCHAR(15),
-    observaciones TEXT,
-    FOREIGN KEY (usuario) REFERENCES USUARIOS(id)
-)
+    hora_entrada TIME(7) NOT NULL,
+    hora_salida TIME(7) NOT NULL,
+    usuario INT NOT NULL,
+    observaciones VARCHAR(500) NULL
+);
+
+ALTER TABLE ASISTENCIA
+ADD CONSTRAINT FK_USUARIO FOREIGN KEY usuario REFERENCES
+TIPO_DE_PERSONAL(id);
+
 ;
 CREATE TABLE HORARIO_DE_TRABAJO (
 	id INT IDENTITY (1,1) PRIMARY KEY NOT NULL,

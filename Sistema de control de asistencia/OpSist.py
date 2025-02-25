@@ -25,10 +25,20 @@ class MainApp:
         print("Configurando ventana principal")
         self.root.title("Sistema de Control de Asistencias")
         self.root.configure(bg=self.estilos.colores.get("fondo", "#000080"))  # Fondo azul oscuro
-        self.root.geometry("1200x800")
+        self.root.geometry("1550x870")
         self.root.minsize(1000, 600)
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
+        self.centrar_ventana(1550, 870)
+
+    def centrar_ventana(self, ancho, alto):
+        """Centra la ventana en la pantalla."""
+        print("Centrando ventana en la pantalla")
+        ancho_pantalla = self.root.winfo_screenwidth()
+        alto_pantalla = self.root.winfo_screenheight()
+        x = (ancho_pantalla // 2) - (ancho // 2)
+        y = (alto_pantalla // 2) - (alto // 2)
+        self.root.geometry(f"{ancho}x{alto}+{x}+{y}")
 
     def crear_interfaz(self):
         """Crea los elementos de la interfaz gráfica."""
@@ -97,11 +107,18 @@ class MainApp:
     def crear_submenu_asistencias(self):
         """Crea el submenú de asistencias."""
         submenu = Menu(self.root, tearoff=0)
-        submenu.add_command(label="Ingresar Entrada", command=lambda: self.abrir_modulo('asistencias.ingresar_he'))
-        submenu.add_command(label="Ingresar Salida", command=lambda: self.abrir_modulo('asistencias.ingresar_hs'))
-        submenu.add_command(label="Consultar", command=lambda: self.abrir_modulo('asistencias.consultar_asistencia'))
-        submenu.add_command(label="Editar", command=lambda: self.abrir_modulo('asistencias.editar_asistencia'))
-        submenu.add_command(label="Eliminar", command=lambda: self.abrir_modulo('asistencias.eliminar_asistencia'))
+        submenu.add_command(label="Ingresar Entrada", command=lambda: self.abrir_modulo('asistencias.ingresar_he', clase_ventana='VentanaEntrada'))
+        submenu.add_command(label="Ingresar Salida", command=lambda: self.abrir_modulo('asistencias.ingresar_hs', clase_ventana='VentanaSalida'))
+
+        # Corrección para consultar asistencia
+        submenu.add_command(label="Consultar", command=lambda: self.abrir_modulo('asistencias.consultar_asistencia', clase_ventana='VentanaConsultarAsistencia'))
+
+        # Corrección para editar asistencia
+        submenu.add_command(label="Editar", command=lambda: self.abrir_modulo('asistencias.editar_asistencia', clase_ventana='VentanaEditarAsistencia'))
+
+        # Corrección para eliminar asistencia
+        submenu.add_command(label="Eliminar", command=lambda: self.abrir_modulo('asistencias.eliminar_asistencia', clase_ventana='VentanaEliminarAsistencia'))
+
         return submenu
 
     def crear_submenu_reportes(self):
@@ -114,7 +131,6 @@ class MainApp:
         """Crea el submenú de mantenimiento."""
         submenu = Menu(self.root, tearoff=0)
         submenu.add_command(label="Bitácora", command=lambda: self.abrir_modulo('bitacora'))
-
         # Submenú Respaldo
         submenu_respaldo = Menu(submenu, tearoff=0)
         submenu_respaldo.add_command(label="Crear Respaldo", command=lambda: self.abrir_modulo('mantenimiento.respaldo.crear_respaldo'))
@@ -158,3 +174,4 @@ def mostrar_opciones_sistema():
 
 if __name__ == "__main__":
     mostrar_opciones_sistema()
+
